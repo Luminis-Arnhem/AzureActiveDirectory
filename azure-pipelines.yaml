@@ -63,7 +63,7 @@ stages:
                   inputs:
                     command: custom
                     custom: nuget
-                    arguments: push $(Build.ArtifactStagingDirectory)/**.nupkg -s https://api.nuget.org/v3/index.json -k $(NugetApiKey)
+                    arguments: push $(Build.ArtifactStagingDirectory)/*.nupkg -s https://api.nuget.org/v3/index.json -k $(NugetApiKey)
                   condition: or(contains(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
                     
                 #only publish nuget package when it is a master or a release build.
