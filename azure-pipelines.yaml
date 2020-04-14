@@ -55,11 +55,22 @@ stages:
                   inputs: 
                     pathtoPublish: $(Build.ArtifactStagingDirectory)
                     artifactName: $(nugetArtifactName)
+
+                - task: DotNetCoreCLI@2
+                  displayName: Push Nuget Package
+                  inputs:
+                    command: custom
+                    custom: nuget
+                    arguments: >
+                      push $(Build.ArtifactStagingDirectory)/**.nupkg
+                      -s https://api.nuget.org/v3/index.json
+                      -k oy2a7onj26i2ibwilojapco46wet6kae5o3xwhi47wj3ra
+                  condition: or(contains(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
                     
                 #only publish nuget package when it is a master or a release build.
-                - task: DotNetCoreCLI@2
-                  inputs:
-                    command: 'push'
-                    nugetFeedType: 'external'
-                    externalEndPoint: 'PublicNugetServiceConnection'
-                  condition: or(contains(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+                # - task: DotNetCoreCLI@2
+                #   inputs:
+                #     command: 'push'
+                #     nugetFeedType: 'external'
+                #     externalEndPoint: 'PublicNugetServiceConnection'
+                #   condition: or(contains(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
