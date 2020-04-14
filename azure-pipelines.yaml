@@ -1,0 +1,74 @@
+trigger:
+    - master
+    - release/*
+
+variables:
+    - name: artifactName
+      value: 'Luminis.AzureActiveDirectory'
+    - name: nugetArtifactName
+      value: 'Luminis.AzureActiveDirectory.Nuget'
+    - name: buildConfiguration
+      value: 'Release'
+
+stages:
+    - stage: Build
+      jobs:
+          - job: Build
+            displayName: Build Nextpipelab.Library
+            pool:
+                vmImage: 'ubuntu-18.04'
+
+            steps:
+                - task: GitVersion@5
+                  displayName: Determine version
+                  inputs:
+                      additionalArguments: '/output buildserver'
+                      configFilePath: 'GitVersion.yml'
+
+                - bash: export
+                  displayName: Log all environment vars
+
+                - task: DotNetCoreCLI@2
+                  displayName: DotnetCore Build
+                  inputs:
+                      publishWebProjects: false
+                      command: build
+                      projects: AzureActiveDirectory.sln
+                      arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory) -p:version=$(GitVersion.FullSemVer)'
+                      versioningScheme: byBuildNumber
+
+                - task: DotNetCoreCLI@2
+                  displayName: DotnetCore Test
+                  inputs:
+                      command: test
+                      projects: '**/*Test/*.csproj'
+                      arguments: '--collect:"Code Coverage"'
+
+                - task: PublishBuildArtifacts@1
+                  displayName: publish build artifacts
+                  inputs: 
+                    pathtoPublish: $(Build.ArtifactStagingDirectory)
+                    artifactName: $(artifactName)
+
+                - task: DotNetCoreCLI@2
+                  displayName: Pack projects
+                  inputs:
+                      command: pack
+                      packagesToPack: '**/*.csproj'
+                      versioningScheme : 'byEnvVar'
+                      versionEnvVar: 'GitVersion.NugetVersionV2'
+                      arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory) -p:version=$(GitVersion.FullSemVer)'
+
+                - task: PublishBuildArtifacts@1
+                  displayName: Pipeline nuget packages
+                  inputs: 
+                    pathtoPublish: $(Build.ArtifactStagingDirectory)
+                    artifactName: $(nugetArtifactName)
+                    
+                #only publish nuget package when it is a master or a release build.
+                - task: DotNetCoreCLI@2
+                  inputs:
+                    command: 'push'
+                    nugetFeedType: 'external'
+                    externalEndPoint: 'PublicNugetServiceConnection'
+                  condition: or(contains(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))

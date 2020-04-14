@@ -24,7 +24,7 @@ namespace Luminis.AzureActiveDirectory.Extensions
         /// <param name="userId">id of logged in user.</param>
         /// <param name="groupName">Name of group userId should is expected to be in.</param>
         /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
-        public static async Task<bool> IsUserAuthorized(this IUserManager userManager, string userId, string groupName)
+        public static async Task<bool> IsUserInGroup(this IUserManager userManager, string userId, string groupName)
         {
             var groups = await userManager.GetGroupsForUser(userId);
             return groups.Any(g => g.Name.Equals(groupName, StringComparison.InvariantCultureIgnoreCase));

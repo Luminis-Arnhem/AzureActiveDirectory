@@ -1,0 +1,12 @@
+
+branches:
+  master:
+    mode: ContinuousDeployment
+    tag: beta
+    is-release-branch: false
+  release:
+    mode: ContinuousDeployment
+    is-release-branch: true
+    tag: ''
+ignore:
+  sha: []

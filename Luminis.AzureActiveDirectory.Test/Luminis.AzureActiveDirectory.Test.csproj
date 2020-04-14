@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Authors>Hilmar Jansen, Niek Maarse</Authors>
+    <Company>Luminis</Company>
+    <Description>Package that contains a mock implementation of the usermanager. It behaves the same as the UserManager class except that it does not connect to Azure AD but has a local store which can be preconfigured.</Description>
+    <PackageLicenseFile>license.txt</PackageLicenseFile>
+    <RepositoryUrl>https://github.com/Luminis-Arnhem/AzureActiveDirectory.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/Luminis-Arnhem/AzureActiveDirectory</PackageProjectUrl>
+    <PackageReleaseNotes>Initial publication of the source code.</PackageReleaseNotes>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Luminis.AzureActiveDirectory\Luminis.AzureActiveDirectory.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\license.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
