@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Hilmar Jansen, Niek Maarse</Authors>
+    <Company>Luminis</Company>
+    <PackageLicenseFile>license.txt</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/Luminis-Arnhem/AzureActiveDirectory</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Luminis-Arnhem/AzureActiveDirectory.git</RepositoryUrl>
+    <PackageTags>Azure Active Directory</PackageTags>
+    <PackageReleaseNotes>Initial publication of source code</PackageReleaseNotes>
+    <Copyright>Luminis</Copyright>
+    <Description>Package that eases modifcations in AD. I can inivite users,delete users,add users to groups and retrieve all the group names for a provided userid.</Description>
+    <RepositoryType>git</RepositoryType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="stylecop.json" />
+    <None Include="..\license.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="stylecop.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Graph" Version="1.21.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.8.2" />
+    <PackageReference Include="stylecop.analyzers" Version="1.1.118">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="System.Text.Json" Version="4.7.1" />
+  </ItemGroup>
+
+</Project>
