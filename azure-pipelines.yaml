@@ -50,15 +50,6 @@ stages:
                     pathtoPublish: $(Build.ArtifactStagingDirectory)
                     artifactName: $(artifactName)
 
-                - task: DotNetCoreCLI@2
-                  displayName: Pack projects
-                  inputs:
-                      command: pack
-                      packagesToPack: '**/*.csproj'
-                      versioningScheme : 'byEnvVar'
-                      versionEnvVar: 'GitVersion.NugetVersionV2'
-                      arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory) -p:version=$(GitVersion.FullSemVer)'
-
                 - task: PublishBuildArtifacts@1
                   displayName: Pipeline nuget packages
                   inputs: 
