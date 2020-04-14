@@ -57,6 +57,7 @@ stages:
                     pathtoPublish: $(Build.ArtifactStagingDirectory)
                     artifactName: $(nugetArtifactName)
 
+                # https://github.com/MicrosoftDocs/azure-devops-docs/issues/7716 reverting to custom command instead of dotnet push due to public apikey issue.
                 - task: DotNetCoreCLI@2
                   displayName: Push Nuget Package
                   inputs:
