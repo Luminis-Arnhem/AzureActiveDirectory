@@ -3,6 +3,7 @@ trigger:
     - release/*
 
 variables:
+    - group: Luminis
     - name: artifactName
       value: 'Luminis.AzureActiveDirectory'
     - name: nugetArtifactName
@@ -64,7 +65,7 @@ stages:
                     arguments: >
                       push $(Build.ArtifactStagingDirectory)/**.nupkg
                       -s https://api.nuget.org/v3/index.json
-                      -k 
+                      -k $(NugetApiKey)
                   condition: or(contains(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
                     
                 #only publish nuget package when it is a master or a release build.
