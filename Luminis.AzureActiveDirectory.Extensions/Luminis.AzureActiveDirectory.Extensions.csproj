@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <Authors>Niek Maarse, Hilmar Jansen</Authors>
     <Company>Luminis</Company>
     <Description>Some extensions on the luminis.active directory package. it can add it to the aspnetcore services and check if a provided user is authorized by checking if the userid is in a specific group.</Description>
