@@ -57,9 +57,6 @@ stages:
                     pathtoPublish: $(Build.ArtifactStagingDirectory)
                     artifactName: $(nugetArtifactName)
 
-                - task: NuGetAuthenticate@0
-                  inputs:
-                    nuGetServiceConnections: 'PublicNugetServiceConnection'
                 - task: NuGetCommand@2
                   inputs:
                     command: 'push'
