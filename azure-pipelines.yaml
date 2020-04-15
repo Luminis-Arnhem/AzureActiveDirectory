@@ -57,6 +57,9 @@ stages:
                     pathtoPublish: $(Build.ArtifactStagingDirectory)
                     artifactName: $(nugetArtifactName)
 
+                - task: NuGetInstaller@0
+                  displayName: install nuget
+
                 # https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/package/nuget-authenticate?view=azure-devops
                 - script: nuget push -ApiKey $(NugetApiKey) -Source "PublicNugetServiceConnection" $(Build.ArtifactStagingDirectory)/**/*.nupkg
                   displayName: push to nuget.org
