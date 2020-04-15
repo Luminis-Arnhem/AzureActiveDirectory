@@ -57,16 +57,27 @@ stages:
                     pathtoPublish: $(Build.ArtifactStagingDirectory)
                     artifactName: $(nugetArtifactName)
 
-                - task: NuGetInstaller@0
-                  displayName: install nuget
-
-                - task: NuGetPublisher@0
+                - task: NuGetAuthenticate@0
                   inputs:
-                    searchPattern: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-                    nuGetFeedType: 'external'
-                    nuGetAdditionalArgs: 'push'
-                    feedName: 'PublicNugetServiceConnection'
-                    nuGetVersion: '3.3.0'
+                    nuGetServiceConnections: 'PublicNugetServiceConnection'
+                - task: NuGetCommand@2
+                  inputs:
+                    command: push
+                    nuGetFeedType: external
+                    versioningScheme: byEnvVar
+                    versionEnvVar: $(GitVersion.FullSemVer)
+
+                # fails cannot find feedname
+                # - task: NuGetInstaller@0
+                #   displayName: install nuget
+
+                # - task: NuGetPublisher@0
+                #   inputs:
+                #     searchPattern: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+                #     nuGetFeedType: 'external'
+                #     nuGetAdditionalArgs: 'push'
+                #     feedName: 'PublicNugetServiceConnection'
+                #     nuGetVersion: '3.3.0'
 
                 # fails it also tries to push snupkg
                 # # https://github.com/MicrosoftDocs/azure-devops-docs/issues/7716 reverting to custom command instead of dotnet push due to public apikey issue.
