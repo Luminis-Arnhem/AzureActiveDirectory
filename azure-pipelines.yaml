@@ -57,13 +57,22 @@ stages:
                     pathtoPublish: $(Build.ArtifactStagingDirectory)
                     artifactName: $(nugetArtifactName)
 
-                - task: NuGetCommand@2
+                - task: NuGetAuthenticate@0
                   inputs:
-                    command: 'push'
-                    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
-                    nuGetFeedType: 'external'
-                    arguments: -ApiKey $(NugetApiKey)
-                    publishFeedCredentials: 'PublicNugetServiceConnection'
+                    nuGetServiceConnections: 'PublicNugetServiceConnection'
+
+                # https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/package/nuget-authenticate?view=azure-devops
+                - script: nuget push -ApiKey $(NugetApiKey) -Source "PublicNugetServiceConnection" $(Build.ArtifactStagingDirectory)/**/*.nupkg
+                  displayName: push to nuget.org
+
+                # apikey unsupported or invalid
+                # - task: NuGetCommand@2
+                #   inputs:
+                #     command: 'push'
+                #     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+                #     nuGetFeedType: 'external'
+                #     arguments: -ApiKey $(NugetApiKey)
+                #     publishFeedCredentials: 'PublicNugetServiceConnection'
 
                 # fails cannot find feedname
                 # - task: NuGetInstaller@0
