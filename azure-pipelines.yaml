@@ -62,7 +62,7 @@ stages:
 
                 - task: NuGetPublisher@0
                   inputs:
-                    searchPattern: '**/*.nupkg;-:**/packages/**/*.nupkg;-:**/*.symbols.nupkg'
+                    searchPattern: '$(Build.ArtifactStagingDirectory)/*.nupkg'
                     nuGetFeedType: 'external'
                     nuGetAdditionalArgs: 'push'
                     feedName: 'PublicNugetServiceConnection'
