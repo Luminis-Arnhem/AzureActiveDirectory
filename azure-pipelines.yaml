@@ -3,7 +3,6 @@ trigger:
     - release/*
 
 variables:
-    - group: Luminis
     - name: artifactName
       value: 'Luminis.AzureActiveDirectory'
     - name: nugetArtifactName
@@ -64,41 +63,3 @@ stages:
                     packagesToPush: '**/*.nupkg;!**/*.symbols.nupkg'
                     nuGetFeedType: external 
                     publishFeedCredentials: PublicNugetServiceConnection
-                    
-                # - task: NuGetCommand@2
-                #   inputs:
-                #     command: 'push'
-                #     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
-                #     nuGetFeedType: 'external'
-                #     publishFeedCredentials: 'PublicNugetServiceConnection'
-
-                # fails cannot find feedname
-                # - task: NuGetInstaller@0
-                #   displayName: install nuget
-
-                # - task: NuGetPublisher@0
-                #   inputs:
-                #     searchPattern: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-                #     nuGetFeedType: 'external'
-                #     nuGetAdditionalArgs: 'push'
-                #     feedName: 'PublicNugetServiceConnection'
-                #     nuGetVersion: '3.3.0'
-
-                # fails it also tries to push snupkg
-                # # https://github.com/MicrosoftDocs/azure-devops-docs/issues/7716 reverting to custom command instead of dotnet push due to public apikey issue.
-                # - task: DotNetCoreCLI@2
-                #   displayName: Push Nuget Package
-                #   inputs:
-                #     command: custom
-                #     custom: nuget
-                #     arguments: push $(Build.ArtifactStagingDirectory)/*.nupkg -s https://api.nuget.org/v3/index.json -k $(NugetApiKey)
-                #   condition: or(contains(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
-                    
-                # fails cannot push to external nuget repos
-                #only publish nuget package when it is a master or a release build.
-                # - task: DotNetCoreCLI@2
-                #   inputs:
-                #     command: 'push'
-                #     nugetFeedType: 'external'
-                #     externalEndPoint: 'PublicNugetServiceConnection'
-                #   condition: or(contains(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
