@@ -50,25 +50,16 @@ stages:
                     pathtoPublish: $(Build.ArtifactStagingDirectory)
                     artifactName: $(artifactName)
 
-                - task: DotNetCoreCLI@2
-                  displayName: Pack projects
-                  inputs:
-                      command: pack
-                      packagesToPack: '**/*.csproj'
-                      versioningScheme : 'byEnvVar'
-                      versionEnvVar: 'GitVersion.NugetVersionV2'
-                      arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory) -p:version=$(GitVersion.FullSemVer)'
-
                 - task: PublishBuildArtifacts@1
                   displayName: Pipeline nuget packages
                   inputs: 
                     pathtoPublish: $(Build.ArtifactStagingDirectory)
                     artifactName: $(nugetArtifactName)
-                    
-                #only publish nuget package when it is a master or a release build.
-                - task: DotNetCoreCLI@2
-                  inputs:
-                    command: 'push'
-                    nugetFeedType: 'external'
-                    externalEndPoint: 'PublicNugetServiceConnection'
-                  condition: or(contains(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+
+                - task: NuGetCommand@2
+                  displayName: 'NuGet push'
+                  inputs: 
+                    command: push
+                    packagesToPush: '**/*.nupkg;!**/*.symbols.nupkg'
+                    nuGetFeedType: external 
+                    publishFeedCredentials: PublicNugetServiceConnection
