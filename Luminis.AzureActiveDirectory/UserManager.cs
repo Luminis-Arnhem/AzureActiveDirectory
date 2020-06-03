@@ -137,12 +137,16 @@ namespace Luminis.AzureActiveDirectory
         }
 
         /// <inheritdoc/>
-        public async Task<bool> IsInvited(string emailAddress)
+        public async Task<(bool, string)> IsInvited(string emailAddress)
         {
             var url = this.graphClient.Users.AppendSegmentToRequestUrl($"?$filter=Mail eq '{emailAddress}'");
             var client = new GraphServiceUsersCollectionRequestBuilder(url, this.graphClient);
             var users = await client.Request().GetAsync().ConfigureAwait(false);
-            return users.Count > 0;
+            if (users.Count > 0)
+            {
+                return (true, users.First().Id);
+            }
+            return (false, null);
         }
 
         /// <inheritdoc/>

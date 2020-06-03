@@ -59,7 +59,7 @@ namespace Luminis.AzureActiveDirectory
         /// </summary>
         /// <param name="emailAddress">The emailaddress to send the invitation to.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task<bool> IsInvited(string emailAddress);
+        Task<(bool IsInvited, string UserId)> IsInvited(string emailAddress);
 
         /// <summary>
         /// Deletes the given user from the Active Directory.

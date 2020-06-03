@@ -165,10 +165,15 @@ namespace Luminis.AzureActiveDirectory.Test
             return Task.FromResult((user, redirectUrl));
         }
 
-        public Task<bool> IsInvited(string emailAddress)
+        public Task<(bool, string)> IsInvited(string emailAddress)
         {
-            var isInvited = InvitedUsers.Any(u => u.Item1.Username.Equals(emailAddress, StringComparison.InvariantCultureIgnoreCase));
-            return Task.FromResult(isInvited);
+            var invitedUser = InvitedUsers.FirstOrDefault(u => u.Item1.Username.Equals(emailAddress, StringComparison.InvariantCultureIgnoreCase)).Item1;
+            if (invitedUser != null)
+            {
+                return Task.FromResult((true, invitedUser.Id));
+            }
+            return Task.FromResult((true, invitedUser.Id));
+
         }
 
         public Task RemoveUserFromGroup(string groupId, string userId)
