@@ -9,11 +9,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Luminis.AzureActiveDirector
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F96E7555-F727-414F-9284-981D26A4EC47}"
 	ProjectSection(SolutionItems) = preProject
+		azure-pipelines.yaml = azure-pipelines.yaml
 		license.txt = license.txt
 		Readme.md = Readme.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Luminis.AzureActiveDirectory.Test", "Luminis.AzureActiveDirectory.Test\Luminis.AzureActiveDirectory.Test.csproj", "{0391A792-FC0F-4B93-9E5B-675250611EAE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Luminis.AzureActiveDirectory.Test", "Luminis.AzureActiveDirectory.Test\Luminis.AzureActiveDirectory.Test.csproj", "{0391A792-FC0F-4B93-9E5B-675250611EAE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
