@@ -50,16 +50,10 @@ stages:
                     pathtoPublish: $(Build.ArtifactStagingDirectory)
                     artifactName: $(artifactName)
 
-                - task: PublishBuildArtifacts@1
-                  displayName: Pipeline nuget packages
-                  inputs: 
-                    pathtoPublish: $(Build.ArtifactStagingDirectory)
-                    artifactName: $(nugetArtifactName)
-
                 - task: NuGetCommand@2
                   displayName: 'NuGet push'
                   inputs: 
                     command: push
-                    packagesToPush: '**/*.nupkg;!**/*.symbols.nupkg'
+                    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
                     nuGetFeedType: external 
                     publishFeedCredentials: PublicNugetServiceConnection
