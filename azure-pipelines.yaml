@@ -22,7 +22,7 @@ stages:
                 - task: UseDotNet@2
                   displayName: Install .NET Core 2.1
                   inputs:
-                    version: '2.1.0'
+                    version: '2.1.x'
 
                 - task: GitVersion@5
                   displayName: Determine version
