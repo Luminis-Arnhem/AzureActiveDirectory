@@ -19,7 +19,7 @@ namespace Luminis.AzureActiveDirectory
         // See also: https://docs.microsoft.com/en-us/azure/active-directory-b2c/manage-user-accounts-graph-api?tabs=applications
         // Do not forget to enter 'Grant admin consent for Standaardmap: https://docs.microsoft.com/en-us/graph/auth-v2-service
         private const string AppScopes = "https://graph.microsoft.com/.default";
-        private readonly IGraphServiceClient graphClient;
+        private readonly GraphServiceClient graphClient;
         private readonly IAuthenticationProvider authenticationProvider;
 
         /// <summary>

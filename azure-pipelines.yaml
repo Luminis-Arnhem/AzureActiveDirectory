@@ -16,14 +16,16 @@ stages:
           - job: Build
             displayName: Build Nextpipelab.Library
             pool:
-                vmImage: 'ubuntu-18.04'
+                vmImage: 'ubuntu-latest'
 
             steps:
-                - task: GitVersion@5
-                  displayName: Determine version
+                - task: gitversion/setup@0
+                  displayName: Install GitVersion
                   inputs:
-                      additionalArguments: '/output buildserver'
-                      configFilePath: 'GitVersion.yml'
+                    versionSpec: '5.x'
+
+                - task: gitversion/execute@0
+                  displayName: Determine Version
 
                 - bash: export
                   displayName: Log all environment vars
@@ -52,6 +54,7 @@ stages:
 
                 - task: NuGetCommand@2
                   displayName: 'NuGet push'
+                  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/heads/release'))
                   inputs: 
                     command: push
                     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
