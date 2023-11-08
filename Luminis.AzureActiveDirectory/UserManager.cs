@@ -82,7 +82,7 @@ namespace Luminis.AzureActiveDirectory
         }
 
         /// <inheritdoc/>
-        public async Task<(UserInfo user, string InviteRedeemUrl)> InviteUser(
+        public async Task<(UserInfo User, string InviteRedeemUrl)> InviteUser(
            string displayName,
            string emailAddress,
            string redirectUrl,

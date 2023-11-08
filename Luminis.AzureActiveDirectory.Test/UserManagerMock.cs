@@ -7,6 +7,7 @@ namespace Luminis.AzureActiveDirectory.Test
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Text.Json.Serialization;
     using System.Threading.Tasks;
     using Luminis.AzureActiveDirectory.Exceptions;
     using Luminis.AzureActiveDirectory.Models;
@@ -17,16 +18,19 @@ namespace Luminis.AzureActiveDirectory.Test
     /// </summary>
     public class UserManagerMock : IUserManager
     {
+        private readonly string subDomain;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="UserManagerMock"/> class.
         /// Gets a user manager mock.
         /// </summary>
-        public UserManagerMock()
+        public UserManagerMock(string subDomain = null)
         {
             this.Groups = new List<GroupInfo>();
             this.Users = new List<UserInfo>();
             this.UsersInGroup = new Dictionary<string, List<string>>();
             this.InvitedUsers = new List<Tuple<UserInfo, string>>();
+            this.subDomain = subDomain;
         }
 
         /// <summary>
@@ -192,7 +196,7 @@ namespace Luminis.AzureActiveDirectory.Test
         }
 
         /// <inheritdoc />
-        public Task<(UserInfo user, string InviteRedeemUrl)> InviteUser(
+        public Task<(UserInfo User, string InviteRedeemUrl)> InviteUser(
             string displayName,
             string emailAddress,
             string redirectUrl,
@@ -259,43 +263,64 @@ namespace Luminis.AzureActiveDirectory.Test
         /// <inheritdoc />
         public Task SetUserExtensionClaim(string userId, string claimKey, string value)
         {
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
         public Task<string> GetUserExtensionClaim(string userId, string claimKey)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["TestKey"] = "Testvalue",
+                ["Testkey2"] = "Testvalue 2",
+            }));
         }
 
         /// <inheritdoc />
         public Task<(bool Exists, string UserId)> DoesIssuedUserExist(string emailAddress, string issuer)
         {
-            throw new NotImplementedException();
+            var userInvitationInfo = this.Users.FirstOrDefault(u => u.B2cSignInEmail.Equals(emailAddress, StringComparison.InvariantCultureIgnoreCase));
+            if (userInvitationInfo != null)
+            {
+                return Task.FromResult((true, userInvitationInfo.Id));
+            }
+
+            return Task.FromResult((false, (string)null));
         }
 
         /// <inheritdoc />
         public Task SetUserClaim(string userId, User updatedUser)
         {
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
-        public Task<IEnumerable<string>> GetAvailableExtensionClaims(string b2cExtensionsAppObjectId)
+        public async Task<IEnumerable<string>> GetAvailableExtensionClaims(string b2cExtensionsAppObjectId)
         {
-            throw new NotImplementedException();
+            return await Task.FromResult(new[]
+            {
+                $"extension_{b2cExtensionsAppObjectId}_Project_{this.subDomain}_1",
+                $"extension_{b2cExtensionsAppObjectId}_Project_{this.subDomain}_2",
+                $"extension_{b2cExtensionsAppObjectId}_Project_{this.subDomain}_3",
+            });
         }
 
         /// <inheritdoc />
         public Task<(string Name, string Domain)> GetTenantInformationAsync()
         {
-            throw new NotImplementedException();
+            return Task.FromResult((string.Empty, string.Empty));
         }
 
         /// <inheritdoc />
         public Task<(bool Exists, string UserId)> DoesInvitedUserExistWithInvitationStateAsync(string emailAddress, string issuer, string invitationState)
         {
-            throw new NotImplementedException();
+            var userInvitationInfo = this.Users.FirstOrDefault(u => u.B2cSignInEmail.Equals(emailAddress, StringComparison.InvariantCultureIgnoreCase) && u.ExternalUserState == invitationState);
+            if (userInvitationInfo != null)
+            {
+                return Task.FromResult((true, userInvitationInfo.Id));
+            }
+
+            return Task.FromResult((false, (string)null));
         }
     }
 }

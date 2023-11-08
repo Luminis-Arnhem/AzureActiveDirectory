@@ -44,7 +44,7 @@ namespace Luminis.AzureActiveDirectory
         /// <param name="givenName">The given name (first name) of the user.</param>
         /// <param name="surname">The surname (family name or last name) of the user.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation - returning a tuple of the created user and the inviteRedeemUrl.</returns>
-        Task<(UserInfo user, string InviteRedeemUrl)> InviteUser(
+        Task<(UserInfo User, string InviteRedeemUrl)> InviteUser(
             string displayName,
             string emailAddress,
             string redirectUrl,
