@@ -19,11 +19,6 @@ stages:
                 vmImage: 'ubuntu-latest'
 
             steps:
-                - task: UseDotNet@2
-                  displayName: Install .NET Core 2.1
-                  inputs:
-                    version: '2.1.x'
-
                 - task: gitversion/setup@0
                   displayName: Install GitVersion
                   inputs:
@@ -31,6 +26,11 @@ stages:
 
                 - task: gitversion/execute@0
                   displayName: Determine Version
+
+                - task: UseDotNet@2
+                  displayName: Install .NET Core 2.1
+                  inputs:
+                    version: '2.1.x'
 
                 - bash: export
                   displayName: Log all environment vars
