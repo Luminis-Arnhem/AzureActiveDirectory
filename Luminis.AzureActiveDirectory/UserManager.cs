@@ -52,7 +52,7 @@ namespace Luminis.AzureActiveDirectory
                 var userInfo = (UserInfo)user;
                 if (includeSignInData)
                 {
-                    userInfo.LastSignedIn = await this.GetLastSignInAsync(userId).ConfigureAwait(false);
+                    userInfo.LastSignedIn = await this.GetLastSignIn(userId).ConfigureAwait(false);
                 }
 
                 if (includeGroups)
@@ -167,7 +167,7 @@ namespace Luminis.AzureActiveDirectory
         }
 
         /// <inheritdoc/>
-        public async Task<(bool Exists, string UserId)> DoesInvitedUserExistWithInvitationStateAsync(string emailAddress, string issuer, string invitationState)
+        public async Task<(bool Exists, string UserId)> DoesInvitedUserExistWithInvitationState(string emailAddress, string issuer, string invitationState)
         {
             var filter = $"(mail eq '{emailAddress}' or otherMails/any(id:id eq '{emailAddress}')) and userType eq 'Guest' and externalUserState eq '{invitationState}'";
             return await this.DoesUserExist(filter, issuer);
@@ -188,7 +188,7 @@ namespace Luminis.AzureActiveDirectory
                     var userInfo = (UserInfo)user;
                     if (includeSignInData)
                     {
-                        userInfo.LastSignedIn = await this.GetLastSignInAsync(user.Id).ConfigureAwait(false);
+                        userInfo.LastSignedIn = await this.GetLastSignIn(user.Id).ConfigureAwait(false);
                     }
 
                     users.Add(userInfo);
@@ -353,7 +353,7 @@ namespace Luminis.AzureActiveDirectory
             return (information.DisplayName, information.VerifiedDomains.FirstOrDefault()?.Name);
         }
 
-        private async Task<DateTimeOffset?> GetLastSignInAsync(string userId)
+        private async Task<DateTimeOffset?> GetLastSignIn(string userId)
         {
             var url = this.graphClient.AuditLogs.SignIns.AppendSegmentToRequestUrl($"?$filter=userId eq '{userId}'&$top=1");
             var client = new AuditLogRootSignInsCollectionRequestBuilder(url, this.graphClient);

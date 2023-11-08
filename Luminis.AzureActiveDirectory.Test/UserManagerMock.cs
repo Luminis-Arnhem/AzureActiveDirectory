@@ -312,7 +312,7 @@ namespace Luminis.AzureActiveDirectory.Test
         }
 
         /// <inheritdoc />
-        public Task<(bool Exists, string UserId)> DoesInvitedUserExistWithInvitationStateAsync(string emailAddress, string issuer, string invitationState)
+        public Task<(bool Exists, string UserId)> DoesInvitedUserExistWithInvitationState(string emailAddress, string issuer, string invitationState)
         {
             var userInvitationInfo = this.Users.FirstOrDefault(u => u.B2cSignInEmail.Equals(emailAddress, StringComparison.InvariantCultureIgnoreCase) && u.ExternalUserState == invitationState);
             if (userInvitationInfo != null)
