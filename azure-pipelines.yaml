@@ -24,11 +24,13 @@ stages:
                   inputs:
                     version: '2.1.x'
 
-                - task: GitVersion@5
-                  displayName: Determine version
+                - task: gitversion/setup@0
+                  displayName: Install GitVersion
                   inputs:
-                      additionalArguments: '/output buildserver'
-                      configFilePath: 'GitVersion.yml'
+                    versionSpec: '5.x'
+
+                - task: gitversion/execute@0
+                  displayName: Determine Version
 
                 - bash: export
                   displayName: Log all environment vars
