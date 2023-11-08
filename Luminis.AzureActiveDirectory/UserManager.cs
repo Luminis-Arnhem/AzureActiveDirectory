@@ -7,6 +7,7 @@ namespace Luminis.AzureActiveDirectory
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Text.Json;
     using System.Threading.Tasks;
     using Luminis.AzureActiveDirectory.AuthenticationProviders;
     using Luminis.AzureActiveDirectory.Exceptions;
@@ -21,8 +22,9 @@ namespace Luminis.AzureActiveDirectory
         // See also: https://docs.microsoft.com/en-us/azure/active-directory-b2c/manage-user-accounts-graph-api?tabs=applications
         // Do not forget to enter 'Grant admin consent for Standaardmap: https://docs.microsoft.com/en-us/graph/auth-v2-service
         private const string AppScopes = "https://graph.microsoft.com/.default";
-        private readonly IGraphServiceClient graphClient;
+        private readonly GraphServiceClient graphClient;
         private readonly IAuthenticationProvider authenticationProvider;
+        private readonly string tenantId;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserManager"/> class.
@@ -35,6 +37,7 @@ namespace Luminis.AzureActiveDirectory
         {
             this.authenticationProvider = new ConfidentialClientAuthenticationProvider(clientId, clientSecret, AppScopes.Split(';'), tenantId);
             this.graphClient = new GraphServiceClient(this.authenticationProvider);
+            this.tenantId = tenantId;
         }
 
         /// <inheritdoc/>
@@ -42,7 +45,10 @@ namespace Luminis.AzureActiveDirectory
         {
             try
             {
-                var user = await this.graphClient.Users[userId].Request().GetAsync().ConfigureAwait(false);
+                var user = await this.graphClient.Users[userId].Request()
+                    .Select("businessPhones, displayName, givenName, id, jobTitle, mail, otherMails, mobilePhone, officeLocation, preferredLanguage, surname, userPrincipalName, identities")
+                    .GetAsync().ConfigureAwait(false);
+
                 var userInfo = (UserInfo)user;
                 if (includeSignInData)
                 {
@@ -116,8 +122,11 @@ namespace Luminis.AzureActiveDirectory
         /// <inheritdoc/>
         public async Task UpdateUser(string userId, string displayName, string firstName = null, string lastName = null, string companyName = null)
         {
-            var updateUser = new User();
-            updateUser.DisplayName = displayName;
+            var updateUser = new User
+            {
+                DisplayName = displayName,
+            };
+
             if (!string.IsNullOrEmpty(companyName))
             {
                 updateUser.CompanyName = companyName;
@@ -146,14 +155,31 @@ namespace Luminis.AzureActiveDirectory
             {
                 return (true, users.First().Id);
             }
+
             return (false, null);
+        }
+
+        /// <inheritdoc/>
+        public async Task<(bool Exists, string UserId)> DoesIssuedUserExist(string emailAddress, string issuer)
+        {
+            var filter = $"mail eq '{emailAddress}' or otherMails/any(id:id eq '{emailAddress}')";
+            return await this.DoesUserExist(filter, issuer);
+        }
+
+        /// <inheritdoc/>
+        public async Task<(bool Exists, string UserId)> DoesInvitedUserExistWithInvitationStateAsync(string emailAddress, string issuer, string invitationState)
+        {
+            var filter = $"(mail eq '{emailAddress}' or otherMails/any(id:id eq '{emailAddress}')) and userType eq 'Guest' and externalUserState eq '{invitationState}'";
+            return await this.DoesUserExist(filter, issuer);
         }
 
         /// <inheritdoc/>
         public async Task<IEnumerable<UserInfo>> GetAllUsers(bool includeSignInData = false)
         {
             var users = new List<UserInfo>();
-            var userList = await this.graphClient.Users.Request().GetAsync().ConfigureAwait(false);
+            var userList = await this.graphClient.Users.Request()
+                .Select("businessPhones, displayName, givenName, id, jobTitle, mail, otherMails, mobilePhone, officeLocation, preferredLanguage, surname, userPrincipalName, identities")
+                .GetAsync().ConfigureAwait(false);
             while (userList != null)
             {
                 var page = userList.CurrentPage.ToList();
@@ -241,7 +267,9 @@ namespace Luminis.AzureActiveDirectory
         {
             var result = new List<UserInfo>();
             var groups = await this.graphClient.Groups.Request().Filter($"DisplayName eq '{groupName}'").GetAsync();
-            var members = await this.graphClient.Groups[groups.First().Id].Members.Request().GetAsync();
+            var members = await this.graphClient.Groups[groups.First().Id].Members.Request()
+                .Select("businessPhones, displayName, givenName, id, jobTitle, mail, otherMails, mobilePhone, officeLocation, preferredLanguage, surname, userPrincipalName, identities")
+                .GetAsync();
 
             while (members != null)
             {
@@ -252,8 +280,7 @@ namespace Luminis.AzureActiveDirectory
                     if (member is User)
                     {
                         var user = (UserInfo)member;
-                        user.Username = ((User)member).Mail;
-                        var x = ((User)member).CompanyName;
+                        user.UserPrincipalName = ((User)member).Identities.Any(x => x.SignInType == "emailAddress") ? ((User)member).Mail : ((User)member).OtherMails.First();
                         user.Groups = await this.GetGroupsForUser(user.Id).ConfigureAwait(false);
                         result.Add(user);
                     }
@@ -265,6 +292,67 @@ namespace Luminis.AzureActiveDirectory
             return result;
         }
 
+        /// <inheritdoc/>
+        public async Task SetUserClaim(string userId, User updatedUser)
+        {
+            await this.graphClient.Users[userId].Request().UpdateAsync(updatedUser);
+        }
+
+        /// <inheritdoc/>
+        public async Task<IEnumerable<string>> GetAvailableExtensionClaims(string b2cExtensionsAppObjectId)
+        {
+            var availableExtensionProperties = await this.graphClient.Applications[b2cExtensionsAppObjectId].ExtensionProperties.Request().GetAsync();
+
+            return availableExtensionProperties == null || !availableExtensionProperties.Any() ?
+                Enumerable.Empty<string>() :
+                availableExtensionProperties.Where(x => x.Name.StartsWith("extension_", StringComparison.InvariantCultureIgnoreCase)).Select(x => x.Name);
+        }
+
+        /// <inheritdoc/>
+        public async Task SetUserExtensionClaim(string userId, string claimKey, string value)
+        {
+            await this.graphClient.Users[userId].Request().UpdateAsync(new User
+            {
+                AdditionalData = new Dictionary<string, object>
+                {
+                    [claimKey] = value,
+                },
+            });
+        }
+
+        /// <inheritdoc/>
+        public async Task<string> GetUserExtensionClaim(string userId, string claimKey)
+        {
+            try
+            {
+                var user = await this.graphClient.Users[userId].Request()
+                    .Select($"{claimKey}")
+                    .GetAsync().ConfigureAwait(false);
+
+                if (user.AdditionalData.TryGetValue(claimKey, out var value))
+                {
+                    if (((JsonElement)value).ValueKind == JsonValueKind.String)
+                    {
+                        return value.ToString();
+                    }
+                }
+
+                return null;
+            }
+            catch (ServiceException)
+            {
+                throw new UnknownUserException($"The requested user {userId} is not known in the AD");
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<(string Name, string Domain)> GetTenantInformationAsync()
+        {
+            var tenants = await this.graphClient.Organization.Request().GetAsync().ConfigureAwait(false);
+            var information = tenants.FirstOrDefault(t => t.Id == this.tenantId);
+            return (information.DisplayName, information.VerifiedDomains.FirstOrDefault()?.Name);
+        }
+
         private async Task<DateTimeOffset?> GetLastSignInAsync(string userId)
         {
             var url = this.graphClient.AuditLogs.SignIns.AppendSegmentToRequestUrl($"?$filter=userId eq '{userId}'&$top=1");
@@ -272,6 +360,18 @@ namespace Luminis.AzureActiveDirectory
             var signins = await client.Request().GetAsync().ConfigureAwait(false);
             var lastSignin = signins.FirstOrDefault()?.CreatedDateTime;
             return lastSignin;
+        }
+
+        private async Task<(bool Exists, string UserId)> DoesUserExist(string filter, string issuer)
+        {
+            var userList = await this.graphClient.Users.Request()
+                .Filter(filter)
+                .Select("id, identities")
+                .GetAsync().ConfigureAwait(false);
+
+            var userId = userList.CurrentPage.FirstOrDefault(x => x.Identities.Any(y => y.Issuer == issuer))?.Id;
+
+            return (userId != null, userId);
         }
     }
 }
