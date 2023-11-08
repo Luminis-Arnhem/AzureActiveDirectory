@@ -7,7 +7,6 @@ namespace Luminis.AzureActiveDirectory.Test
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text.Json.Serialization;
     using System.Threading.Tasks;
     using Luminis.AzureActiveDirectory.Exceptions;
     using Luminis.AzureActiveDirectory.Models;
