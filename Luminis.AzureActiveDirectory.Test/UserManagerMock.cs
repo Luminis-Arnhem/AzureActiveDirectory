@@ -306,7 +306,7 @@ namespace Luminis.AzureActiveDirectory.Test
         }
 
         /// <inheritdoc />
-        public Task<(string Name, string Domain)> GetTenantInformationAsync()
+        public Task<(string Name, string Domain)> GetTenantInformation()
         {
             return Task.FromResult((string.Empty, string.Empty));
         }

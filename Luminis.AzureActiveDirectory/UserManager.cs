@@ -346,7 +346,7 @@ namespace Luminis.AzureActiveDirectory
         }
 
         /// <inheritdoc/>
-        public async Task<(string Name, string Domain)> GetTenantInformationAsync()
+        public async Task<(string Name, string Domain)> GetTenantInformation()
         {
             var tenants = await this.graphClient.Organization.Request().GetAsync().ConfigureAwait(false);
             var information = tenants.FirstOrDefault(t => t.Id == this.tenantId);

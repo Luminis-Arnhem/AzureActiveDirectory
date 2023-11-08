@@ -77,7 +77,7 @@ namespace Luminis.AzureActiveDirectory
         /// <param name="issuer">The issuer to check.</param>
         /// <param name="invitationState">The invitation state to check. Can be 'Accepted' or 'PendingAcceptance'.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task<(bool Exists, string UserId)> DoesInvitedUserExistWithInvitationStateAsync(string emailAddress, string issuer, string invitationState);
+        Task<(bool Exists, string UserId)> DoesInvitedUserExistWithInvitationState(string emailAddress, string issuer, string invitationState);
 
         /// <summary>
         /// Deletes the given user from the Active Directory.
@@ -177,6 +177,6 @@ namespace Luminis.AzureActiveDirectory
         /// Gets information from the tenant.
         /// </summary>
         /// <returns>The tenant name and the primary domain name.</returns>
-        Task<(string Name, string Domain)> GetTenantInformationAsync();
+        Task<(string Name, string Domain)> GetTenantInformation();
     }
 }
