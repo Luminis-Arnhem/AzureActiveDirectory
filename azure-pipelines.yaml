@@ -16,7 +16,7 @@ stages:
           - job: Build
             displayName: Build Nextpipelab.Library
             pool:
-                vmImage: 'ubuntu-18.04'
+                vmImage: 'ubuntu-latest'
 
             steps:
                 - task: GitVersion@5
