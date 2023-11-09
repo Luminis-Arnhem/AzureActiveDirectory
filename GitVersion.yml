@@ -5,7 +5,7 @@ branches:
     tag: beta
     is-release-branch: false
   release:
-    mode: ContinuousDeployment
+    mode: ContinuousDelivery
     is-release-branch: true
     tag: ''
 ignore:
