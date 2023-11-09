@@ -13,6 +13,12 @@ With this package you can do:
 * Add a group
 * Add user to a group
 * Remove user from a group
+* Set user claims
+* Get user claims
+* Set user extension claims
+* Get user extension claims
+* Get available extension claims
+* Get tenant information
 
 
 
