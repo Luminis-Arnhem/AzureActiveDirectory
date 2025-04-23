@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-	<Authors>Hilmar Jansen, Niek Maarse, Erik Bossert</Authors>
+	<Authors>Hilmar Jansen, Erik Bossert</Authors>
     <Company>Luminis</Company>
     <Description>Some extensions on the luminis.active directory package. it can add it to the aspnetcore services and check if a provided user is authorized by checking if the userid is in a specific group.</Description>
     <PackageLicenseFile>license.txt</PackageLicenseFile>
@@ -15,7 +15,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.4" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.8.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.8.0" />
   </ItemGroup>
 
   <ItemGroup>

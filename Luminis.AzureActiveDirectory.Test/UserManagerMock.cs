@@ -10,7 +10,7 @@ namespace Luminis.AzureActiveDirectory.Test
     using System.Threading.Tasks;
     using Luminis.AzureActiveDirectory.Exceptions;
     using Luminis.AzureActiveDirectory.Models;
-    using Microsoft.Graph;
+    using Microsoft.Graph.Models;
 
     /// <summary>
     /// A user manager mock for testing.

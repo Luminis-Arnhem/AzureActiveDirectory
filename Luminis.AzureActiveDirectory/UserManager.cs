@@ -13,6 +13,8 @@ namespace Luminis.AzureActiveDirectory
     using Luminis.AzureActiveDirectory.Exceptions;
     using Luminis.AzureActiveDirectory.Models;
     using Microsoft.Graph;
+    using Microsoft.Graph.Models;
+    using Microsoft.Graph.Users.Item.GetMemberGroups;
 
     /// <summary>
     /// A user manager for Azure Active Directory.
@@ -23,7 +25,6 @@ namespace Luminis.AzureActiveDirectory
         // Do not forget to enter 'Grant admin consent for Standaardmap: https://docs.microsoft.com/en-us/graph/auth-v2-service
         private const string AppScopes = "https://graph.microsoft.com/.default";
         private readonly GraphServiceClient graphClient;
-        private readonly IAuthenticationProvider authenticationProvider;
         private readonly string tenantId;
 
         /// <summary>
@@ -35,8 +36,8 @@ namespace Luminis.AzureActiveDirectory
         /// <param name="tenantId">The tenantId.</param>
         public UserManager(string clientId, string clientSecret, string tenantId)
         {
-            this.authenticationProvider = new ConfidentialClientAuthenticationProvider(clientId, clientSecret, AppScopes.Split(';'), tenantId);
-            this.graphClient = new GraphServiceClient(this.authenticationProvider);
+            var authenticationProvider = new ConfidentialClientAuthenticationProvider(clientId, clientSecret, AppScopes.Split(';'), tenantId);
+            this.graphClient = new GraphServiceClient(authenticationProvider);
             this.tenantId = tenantId;
         }
 
@@ -45,9 +46,15 @@ namespace Luminis.AzureActiveDirectory
         {
             try
             {
-                var user = await this.graphClient.Users[userId].Request()
-                    .Select("businessPhones, displayName, givenName, id, jobTitle, mail, otherMails, mobilePhone, officeLocation, preferredLanguage, surname, userPrincipalName, identities")
-                    .GetAsync().ConfigureAwait(false);
+                var user = await this.graphClient.Users[userId]
+                    .GetAsync(config =>
+                    {
+                        config.QueryParameters.Select = new[]
+                        {
+                           "businessPhones", "displayName", "givenName", "id", "jobTitle", "mail", "otherMails",
+                           "mobilePhone", "officeLocation", "preferredLanguage", "surname", "userPrincipalName", "identities",
+                        };
+                    }).ConfigureAwait(false);
 
                 var userInfo = (UserInfo)user;
                 if (includeSignInData)
@@ -73,7 +80,7 @@ namespace Luminis.AzureActiveDirectory
         {
             try
             {
-                await this.graphClient.Users[userId].Request().DeleteAsync().ConfigureAwait(false);
+                await this.graphClient.Users[userId].DeleteAsync().ConfigureAwait(false);
             }
             catch (ServiceException)
             {
@@ -90,8 +97,8 @@ namespace Luminis.AzureActiveDirectory
            string messageBody = null,
            string companyName = null,
            string messageLanguage = "nl-NL",
-           string firstName = null,
-           string lastName = null)
+           string givenName = null,
+           string surname = null)
         {
             var message = letAzureSendRedeemMail
                 ? new InvitedUserMessageInfo
@@ -109,10 +116,10 @@ namespace Luminis.AzureActiveDirectory
                 InviteRedirectUrl = redirectUrl,
                 SendInvitationMessage = letAzureSendRedeemMail,
             };
-            var sentInvitation = await this.graphClient.Invitations.Request().AddAsync(invitation).ConfigureAwait(false);
+            var sentInvitation = await this.graphClient.Invitations.PostAsync(invitation).ConfigureAwait(false);
             var user = sentInvitation.InvitedUser;
 
-            await this.UpdateUser(user.Id, displayName, firstName, lastName, companyName).ConfigureAwait(false);
+            await this.UpdateUser(user.Id, displayName, givenName, surname, companyName).ConfigureAwait(false);
 
             user.UserPrincipalName = emailAddress;
             user.DisplayName = displayName;
@@ -142,18 +149,20 @@ namespace Luminis.AzureActiveDirectory
                 updateUser.Surname = lastName;
             }
 
-            await this.graphClient.Users[userId].Request().UpdateAsync(updateUser).ConfigureAwait(false);
+            await this.graphClient.Users[userId].PatchAsync(updateUser).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
         public async Task<(bool, string)> IsInvited(string emailAddress)
         {
-            var url = this.graphClient.Users.AppendSegmentToRequestUrl($"?$filter=Mail eq '{emailAddress}'");
-            var client = new GraphServiceUsersCollectionRequestBuilder(url, this.graphClient);
-            var users = await client.Request().GetAsync().ConfigureAwait(false);
-            if (users.Count > 0)
+            var users = await this.graphClient.Users.GetAsync(config =>
             {
-                return (true, users.First().Id);
+                config.QueryParameters.Filter = $"mail eq '{emailAddress}'";
+            });
+
+            if (users.Value.Count > 0)
+            {
+                return (true, users.Value[0].Id);
             }
 
             return (false, null);
@@ -177,24 +186,24 @@ namespace Luminis.AzureActiveDirectory
         public async Task<IEnumerable<UserInfo>> GetAllUsers(bool includeSignInData = false)
         {
             var users = new List<UserInfo>();
-            var userList = await this.graphClient.Users.Request()
-                .Select("businessPhones, displayName, givenName, id, jobTitle, mail, otherMails, mobilePhone, officeLocation, preferredLanguage, surname, userPrincipalName, identities")
-                .GetAsync().ConfigureAwait(false);
-            while (userList != null)
+            var userList = await this.graphClient.Users.GetAsync(config =>
             {
-                var page = userList.CurrentPage.ToList();
-                foreach (var user in page)
+                config.QueryParameters.Select = new[]
                 {
-                    var userInfo = (UserInfo)user;
-                    if (includeSignInData)
-                    {
-                        userInfo.LastSignedIn = await this.GetLastSignIn(user.Id).ConfigureAwait(false);
-                    }
+                    "businessPhones", "displayName", "givenName", "id", "jobTitle", "mail", "otherMails",
+                    "mobilePhone", "officeLocation", "preferredLanguage", "surname", "userPrincipalName", "identities",
+                };
+            }).ConfigureAwait(false);
 
-                    users.Add(userInfo);
+            foreach (var user in userList.Value)
+            {
+                var userInfo = (UserInfo)user;
+                if (includeSignInData)
+                {
+                    userInfo.LastSignedIn = await this.GetLastSignIn(user.Id).ConfigureAwait(false);
                 }
 
-                userList = userList.NextPageRequest != null ? await userList.NextPageRequest.GetAsync().ConfigureAwait(false) : null;
+                users.Add(userInfo);
             }
 
             return users;
@@ -204,13 +213,9 @@ namespace Luminis.AzureActiveDirectory
         public async Task<List<GroupInfo>> GetAllGroups()
         {
             var groups = new List<GroupInfo>();
-            var groupList = await this.graphClient.Groups.Request().GetAsync().ConfigureAwait(false);
-            while (groupList != null)
-            {
-                var page = groupList.CurrentPage.ToList();
-                page.ForEach(group => groups.Add((GroupInfo)group));
-                groupList = groupList.NextPageRequest != null ? await groupList.NextPageRequest.GetAsync().ConfigureAwait(false) : null;
-            }
+            var groupList = await this.graphClient.Groups.GetAsync().ConfigureAwait(false);
+
+            groupList.Value?.ForEach(group => groups.Add((GroupInfo)group));
 
             return groups;
         }
@@ -225,10 +230,10 @@ namespace Luminis.AzureActiveDirectory
                 MailNickname = name,
                 SecurityEnabled = true,
             };
-            var createdGroup = (GroupInfo)await this.graphClient.Groups.Request().AddAsync(group).ConfigureAwait(false);
+            var createdGroup = (GroupInfo)await this.graphClient.Groups.PostAsync(group).ConfigureAwait(false);
             if (!string.IsNullOrWhiteSpace(parentGroupId))
             {
-                await this.graphClient.Groups[createdGroup.Id].MemberOf.References.Request().AddAsync(new DirectoryObject { Id = parentGroupId }).ConfigureAwait(false);
+                await this.graphClient.Groups[parentGroupId].Members.Ref.PostAsync(new ReferenceCreate { OdataId = $"https://graph.microsoft.com/v1.0/groups/{createdGroup.Id}" }).ConfigureAwait(false);
             }
 
             return createdGroup;
@@ -237,20 +242,20 @@ namespace Luminis.AzureActiveDirectory
         /// <inheritdoc/>
         public async Task AddUserToGroup(string groupId, string userId)
         {
-            await this.graphClient.Groups[groupId].Members.References.Request().AddAsync(new User { Id = userId }).ConfigureAwait(false);
+            await this.graphClient.Groups[groupId].Members.Ref.PostAsync(new ReferenceCreate { OdataId = $"https://graph.microsoft.com/v1.0/groups/{userId}" }).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
         public async Task<List<GroupInfo>> GetGroupsForUser(string userId)
         {
             var groupIds = new List<string>();
-            var groupList = await this.graphClient.Users[userId].GetMemberGroups(true).Request().PostAsync().ConfigureAwait(false);
-            while (groupList != null)
+            var requestBody = new GetMemberGroupsPostRequestBody
             {
-                var page = groupList.CurrentPage.ToList();
-                page.ForEach(groupIds.Add);
-                groupList = groupList.NextPageRequest != null ? await groupList.NextPageRequest.PostAsync().ConfigureAwait(false) : null;
-            }
+                SecurityEnabledOnly = false, // Set to true if you only want security-enabled groups
+            };
+
+            var groupList = await this.graphClient.Users[userId].GetMemberGroups.PostAsGetMemberGroupsPostResponseAsync(requestBody).ConfigureAwait(false);
+            groupList.Value?.ForEach(groupIds.Add);
 
             var groups = await this.GetAllGroups().ConfigureAwait(false);
             return groups.Where(g => groupIds.Contains(g.Id)).ToList();
@@ -259,34 +264,39 @@ namespace Luminis.AzureActiveDirectory
         /// <inheritdoc/>
         public async Task RemoveUserFromGroup(string groupId, string userId)
         {
-            await this.graphClient.Groups[groupId].Members[userId].Reference.Request().DeleteAsync().ConfigureAwait(false);
+            await this.graphClient.Groups[groupId].Members[userId].Ref.DeleteAsync().ConfigureAwait(false);
         }
 
-        /// <inheritdoc/>
-        public async Task<List<UserInfo>> GetAllUsersInGroup(string groupName)
+        /// <summary>
+        /// Retrieves all users in a specified group.
+        /// </summary>
+        /// <param name="group">The name of the group.</param>
+        /// <returns>A list of <see cref="UserInfo"/> objects representing the users in the group.</returns>
+        public async Task<List<UserInfo>> GetAllUsersInGroup(string group)
         {
             var result = new List<UserInfo>();
-            var groups = await this.graphClient.Groups.Request().Filter($"DisplayName eq '{groupName}'").GetAsync();
-            var members = await this.graphClient.Groups[groups.First().Id].Members.Request()
-                .Select("businessPhones, displayName, givenName, id, jobTitle, mail, otherMails, mobilePhone, officeLocation, preferredLanguage, surname, userPrincipalName, identities")
-                .GetAsync();
 
-            while (members != null)
+            var groups = await this.graphClient.Groups.GetAsync(config =>
             {
-                var page = members.CurrentPage.ToList();
+                config.QueryParameters.Filter = $"displayName eq '{group}'";
+            }).ConfigureAwait(false);
 
-                foreach (var member in page)
+            var members = await this.graphClient.Groups[groups.Value[0].Id].Members
+                .GetAsync(config =>
                 {
-                    if (member is User)
+                    config.QueryParameters.Select = new[]
                     {
-                        var user = (UserInfo)member;
-                        user.UserPrincipalName = ((User)member).Identities.Any(x => x.SignInType == "emailAddress") ? ((User)member).Mail : ((User)member).OtherMails.First();
-                        user.Groups = await this.GetGroupsForUser(user.Id).ConfigureAwait(false);
-                        result.Add(user);
-                    }
-                }
+                        "businessPhones", "displayName", "givenName", "id", "jobTitle", "mail", "otherMails",
+                        "mobilePhone", "officeLocation", "preferredLanguage", "surname", "userPrincipalName", "identities",
+                    };
+                }).ConfigureAwait(false);
 
-                members = members.NextPageRequest != null ? await members.NextPageRequest.GetAsync().ConfigureAwait(false) : null;
+            foreach (var member in members.Value.Where(member => member is User))
+            {
+                var user = (UserInfo)member;
+                user.UserPrincipalName = ((User)member).Identities.Any(x => x.SignInType == "emailAddress") ? ((User)member).Mail : ((User)member).OtherMails[0];
+                user.Groups = await this.GetGroupsForUser(user.Id).ConfigureAwait(false);
+                result.Add(user);
             }
 
             return result;
@@ -295,23 +305,23 @@ namespace Luminis.AzureActiveDirectory
         /// <inheritdoc/>
         public async Task SetUserClaim(string userId, User updatedUser)
         {
-            await this.graphClient.Users[userId].Request().UpdateAsync(updatedUser);
+            await this.graphClient.Users[userId].PatchAsync(updatedUser);
         }
 
         /// <inheritdoc/>
         public async Task<IEnumerable<string>> GetAvailableExtensionClaims(string b2cExtensionsAppObjectId)
         {
-            var availableExtensionProperties = await this.graphClient.Applications[b2cExtensionsAppObjectId].ExtensionProperties.Request().GetAsync();
+            var availableExtensionProperties = await this.graphClient.Applications[b2cExtensionsAppObjectId].ExtensionProperties.GetAsync();
 
-            return availableExtensionProperties == null || !availableExtensionProperties.Any() ?
+            return availableExtensionProperties == null || !availableExtensionProperties.Value.Any() ?
                 Enumerable.Empty<string>() :
-                availableExtensionProperties.Where(x => x.Name.StartsWith("extension_", StringComparison.InvariantCultureIgnoreCase)).Select(x => x.Name);
+                availableExtensionProperties.Value.Where(x => x.Name.StartsWith("extension_", StringComparison.InvariantCultureIgnoreCase)).Select(x => x.Name);
         }
 
         /// <inheritdoc/>
         public async Task SetUserExtensionClaim(string userId, string claimKey, string value)
         {
-            await this.graphClient.Users[userId].Request().UpdateAsync(new User
+            await this.graphClient.Users[userId].PatchAsync(new User
             {
                 AdditionalData = new Dictionary<string, object>
                 {
@@ -325,16 +335,15 @@ namespace Luminis.AzureActiveDirectory
         {
             try
             {
-                var user = await this.graphClient.Users[userId].Request()
-                    .Select($"{claimKey}")
-                    .GetAsync().ConfigureAwait(false);
-
-                if (user.AdditionalData.TryGetValue(claimKey, out var value))
-                {
-                    if (((JsonElement)value).ValueKind == JsonValueKind.String)
+                var user = await this.graphClient.Users[userId]
+                    .GetAsync(config =>
                     {
-                        return value.ToString();
-                    }
+                        config.QueryParameters.Select = new[] { claimKey };
+                    }).ConfigureAwait(false);
+
+                if (user.AdditionalData.TryGetValue(claimKey, out var value) && ((JsonElement)value).ValueKind == JsonValueKind.String)
+                {
+                    return value.ToString();
                 }
 
                 return null;
@@ -348,28 +357,31 @@ namespace Luminis.AzureActiveDirectory
         /// <inheritdoc/>
         public async Task<(string Name, string Domain)> GetTenantInformation()
         {
-            var tenants = await this.graphClient.Organization.Request().GetAsync().ConfigureAwait(false);
-            var information = tenants.FirstOrDefault(t => t.Id == this.tenantId);
+            var tenants = await this.graphClient.Organization.GetAsync().ConfigureAwait(false);
+            var information = tenants.Value.FirstOrDefault(t => t.Id == this.tenantId);
             return (information.DisplayName, information.VerifiedDomains.FirstOrDefault()?.Name);
         }
 
         private async Task<DateTimeOffset?> GetLastSignIn(string userId)
         {
-            var url = this.graphClient.AuditLogs.SignIns.AppendSegmentToRequestUrl($"?$filter=userId eq '{userId}'&$top=1");
-            var client = new AuditLogRootSignInsCollectionRequestBuilder(url, this.graphClient);
-            var signins = await client.Request().GetAsync().ConfigureAwait(false);
-            var lastSignin = signins.FirstOrDefault()?.CreatedDateTime;
+            var signins = await this.graphClient.AuditLogs.SignIns.GetAsync(config =>
+            {
+                config.QueryParameters.Filter = $"?$filter=userId eq '{userId}'&$top=1";
+            }).ConfigureAwait(false);
+            var lastSignin = signins.Value.FirstOrDefault()?.CreatedDateTime;
             return lastSignin;
         }
 
         private async Task<(bool Exists, string UserId)> DoesUserExist(string filter, string issuer)
         {
-            var userList = await this.graphClient.Users.Request()
-                .Filter(filter)
-                .Select("id, identities")
-                .GetAsync().ConfigureAwait(false);
+            var userList = await this.graphClient.Users
+                .GetAsync(config =>
+                {
+                    config.QueryParameters.Filter = filter;
+                    config.QueryParameters.Select = new[] { "id", "identities" };
+                }).ConfigureAwait(false);
 
-            var userId = userList.CurrentPage.FirstOrDefault(x => x.Identities.Any(y => y.Issuer == issuer))?.Id;
+            var userId = userList.Value.FirstOrDefault(x => x.Identities.Any(y => y.Issuer == issuer))?.Id;
 
             return (userId != null, userId);
         }

@@ -4,10 +4,12 @@
 
 namespace Luminis.AzureActiveDirectory.AuthenticationProviders
 {
-    using System.Net.Http;
+    using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Graph;
     using Microsoft.Identity.Client;
+    using Microsoft.Kiota.Abstractions;
+    using Microsoft.Kiota.Abstractions.Authentication;
 
     /// <summary>
     /// Implements the <see cref="IAuthenticationProvider"/>.
@@ -37,18 +39,21 @@ namespace Luminis.AzureActiveDirectory.AuthenticationProviders
         /// <summary>
         /// Adds authentication on the request.
         /// </summary>
-        /// <param name="request">The request.</param>
-        /// <returns>A <see cref="Task"/>.</returns>
-        public async Task AuthenticateRequestAsync(HttpRequestMessage request)
+        /// <param name="request">The request information.</param>
+        /// <param name="additionalAuthenticationContext">Additional context for authentication.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object> additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
         {
             var clientApplication = ConfidentialClientApplicationBuilder.Create(this.clientId)
-                           .WithClientSecret(this.clientSecret)
-                           .WithClientId(this.clientId)
-                           .WithTenantId(this.tenantId)
+                               .WithClientSecret(this.clientSecret)
+                               .WithClientId(this.clientId)
+                               .WithTenantId(this.tenantId)
+                               .Build();
 
-                           .Build();
             var result = await clientApplication.AcquireTokenForClient(this.appScopes).ExecuteAsync();
-            request.Headers.Add("Authorization", result.CreateAuthorizationHeader());
+
+            request.Headers?.Add("Authorization", $"Bearer {result.AccessToken}");
         }
     }
 }

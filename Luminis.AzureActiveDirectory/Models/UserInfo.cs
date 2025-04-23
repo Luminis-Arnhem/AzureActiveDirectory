@@ -7,7 +7,7 @@ namespace Luminis.AzureActiveDirectory.Models
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Microsoft.Graph;
+    using Microsoft.Graph.Models;
 
     /// <summary>
     /// User information.
@@ -80,7 +80,7 @@ namespace Luminis.AzureActiveDirectory.Models
                 LastName = user.Surname,
                 DisplayName = user.DisplayName != "unknown" ? user.DisplayName : $"{user.GivenName} {user.Surname}",
                 UserPrincipalName = user.UserPrincipalName,
-                B2cSignInEmail = user.Identities?.Where(x => x.SignInType == "emailAddress").FirstOrDefault()?.IssuerAssignedId,
+                B2cSignInEmail = user.Identities?.FirstOrDefault(x => x.SignInType == "emailAddress")?.IssuerAssignedId,
                 ExternalUserState = user.ExternalUserState,
             };
         }

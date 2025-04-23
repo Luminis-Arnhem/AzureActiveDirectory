@@ -4,7 +4,7 @@
 
 namespace Luminis.AzureActiveDirectory.Models
 {
-    using Microsoft.Graph;
+    using Microsoft.Graph.Models;
 
     /// <summary>
     /// The application info.
