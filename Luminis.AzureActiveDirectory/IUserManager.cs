@@ -7,7 +7,7 @@ namespace Luminis.AzureActiveDirectory
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Luminis.AzureActiveDirectory.Models;
-    using Microsoft.Graph;
+    using Microsoft.Graph.Models;
 
     /// <summary>
     /// A user manager.

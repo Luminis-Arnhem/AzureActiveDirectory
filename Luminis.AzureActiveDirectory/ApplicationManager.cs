@@ -5,7 +5,6 @@
 namespace Luminis.AzureActiveDirectory
 {
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading.Tasks;
     using Luminis.AzureActiveDirectory.AuthenticationProviders;
     using Luminis.AzureActiveDirectory.Models;
@@ -20,7 +19,6 @@ namespace Luminis.AzureActiveDirectory
         // Do not forget to enter 'Grant admin consent for Standaardmap: https://docs.microsoft.com/en-us/graph/auth-v2-service
         private const string AppScopes = "https://graph.microsoft.com/.default";
         private readonly GraphServiceClient graphClient;
-        private readonly IAuthenticationProvider authenticationProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationManager"/> class.
@@ -30,8 +28,8 @@ namespace Luminis.AzureActiveDirectory
         /// <param name="tenantId">The tenantId.</param>
         public ApplicationManager(string clientId, string clientSecret, string tenantId)
         {
-            this.authenticationProvider = new ConfidentialClientAuthenticationProvider(clientId, clientSecret, AppScopes.Split(';'), tenantId);
-            this.graphClient = new GraphServiceClient(this.authenticationProvider);
+            var authenticationProvider = new ConfidentialClientAuthenticationProvider(clientId, clientSecret, AppScopes.Split(';'), tenantId);
+            this.graphClient = new GraphServiceClient(authenticationProvider);
         }
 
         /// <summary>
@@ -41,19 +39,14 @@ namespace Luminis.AzureActiveDirectory
         public async Task<List<ApplicationInfo>> GetAllApplicationsAsync()
         {
             var result = new List<ApplicationInfo>();
-            var applicationList = await this.graphClient.Applications.Request().GetAsync();
-            while (applicationList != null)
+            var applicationList = await this.graphClient.Applications.GetAsync();
+
+            applicationList.Value?.ForEach(application =>
             {
-                var page = applicationList.CurrentPage.ToList();
-                page.ForEach(application =>
-                {
-                    var applicationInfo = (ApplicationInfo)application;
+                var applicationInfo = (ApplicationInfo)application;
 
-                    result.Add(applicationInfo);
-                });
-
-                applicationList = applicationList.NextPageRequest != null ? await applicationList.NextPageRequest.GetAsync() : null;
-            }
+                result.Add(applicationInfo);
+            });
 
             return result;
         }
