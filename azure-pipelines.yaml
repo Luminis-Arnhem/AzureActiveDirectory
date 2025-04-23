@@ -46,17 +46,15 @@ stages:
                       projects: '**/*Test/*.csproj'
                       arguments: '--collect:"Code Coverage"'
 
-                - task: PublishBuildArtifacts@1
-                  displayName: publish build artifacts
-                  inputs: 
-                    pathtoPublish: $(Build.ArtifactStagingDirectory)
-                    artifactName: $(artifactName)
+                - task: DotNetCoreCLI@2
+                  displayName: 'dotnet pack'
+                  inputs:
+                    command: pack
 
                 - task: DotNetCoreCLI@2
                   displayName: 'NuGet push'
                   condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/heads/release'))
                   inputs: 
                     command: push
-                    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
                     nuGetFeedType: external 
                     publishFeedCredentials: LuminisPublicNugetServiceConnection
