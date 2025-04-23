@@ -1,60 +1,68 @@
-trigger:
-    - master
-    - release/*
+trigger:  
+   - master  
+   - release/*  
 
-variables:
-    - name: artifactName
-      value: 'Luminis.AzureActiveDirectory'
-    - name: nugetArtifactName
-      value: 'Luminis.AzureActiveDirectory.Nuget'
-    - name: buildConfiguration
-      value: 'Release'
+variables:  
+   - name: artifactName  
+     value: 'Luminis.AzureActiveDirectory'  
+   - name: nugetArtifactName  
+     value: 'Luminis.AzureActiveDirectory.Nuget'  
+   - name: buildConfiguration  
+     value: 'Release'  
 
-stages:
-    - stage: Build
-      jobs:
-          - job: Build
-            displayName: Build Nextpipelab.Library
-            pool:
-                vmImage: 'ubuntu-latest'
+stages:  
+   - stage: Build  
+     jobs:  
+         - job: Build  
+           displayName: Build Nextpipelab.Library  
+           pool:  
+               vmImage: 'ubuntu-latest'  
 
-            steps:
-                - task: gitversion/setup@0
-                  displayName: Install GitVersion
-                  inputs:
-                    versionSpec: '5.x'
+           steps:  
+               - task: gitversion/setup@0  
+                 displayName: Install GitVersion  
+                 inputs:  
+                   versionSpec: '5.x'  
 
-                - task: gitversion/execute@0
-                  displayName: Determine Version
+               - task: gitversion/execute@0  
+                 displayName: Determine Version  
 
-                - bash: export
-                  displayName: Log all environment vars
+               - bash: export  
+                 displayName: Log all environment vars  
 
-                - task: DotNetCoreCLI@2
-                  displayName: DotnetCore Build
-                  inputs:
-                      publishWebProjects: false
-                      command: build
-                      projects: AzureActiveDirectory.sln
-                      arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory) -p:version=$(GitVersion.FullSemVer)'
-                      versioningScheme: byBuildNumber
+               - task: DotNetCoreCLI@2  
+                 displayName: DotnetCore Build  
+                 inputs:  
+                     publishWebProjects: false  
+                     command: build  
+                     projects: AzureActiveDirectory.sln  
+                     arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory) -p:version=$(GitVersion.FullSemVer)'  
+                     versioningScheme: byBuildNumber  
 
-                - task: DotNetCoreCLI@2
-                  displayName: DotnetCore Test
-                  inputs:
-                      command: test
-                      projects: '**/*Test/*.csproj'
-                      arguments: '--collect:"Code Coverage"'
+               - task: DotNetCoreCLI@2  
+                 displayName: DotnetCore Test  
+                 inputs:  
+                     command: test  
+                     projects: '**/*Test/*.csproj'  
+                     arguments: '--collect:"Code Coverage"'  
 
-                - task: DotNetCoreCLI@2
-                  displayName: 'dotnet pack'
-                  inputs:
-                    command: pack
+               - task: PublishBuildArtifacts@1  
+                 displayName: publish build artifacts  
+                 inputs:   
+                   pathtoPublish: $(Build.ArtifactStagingDirectory)  
+                   artifactName: $(artifactName)  
 
-                - task: DotNetCoreCLI@2
-                  displayName: 'NuGet push'
-                  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/heads/release'))
-                  inputs: 
-                    command: push
-                    nuGetFeedType: external 
-                    publishFeedCredentials: LuminisPublicNugetServiceConnection
+               - script: |  
+                   sudo apt-get update  
+                   sudo apt-get install -y mono-complete  
+                 displayName: Install Mono-Complete
+                 condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/heads/release'))  
+                 
+               - task: NuGetCommand@2
+                 displayName: 'NuGet push'  
+                 condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/heads/release'))  
+                 inputs:   
+                   command: push  
+                   packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'  
+                   nuGetFeedType: external   
+                   publishFeedCredentials: LuminisPublicNugetServiceConnection
