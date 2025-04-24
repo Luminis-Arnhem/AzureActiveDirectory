@@ -55,8 +55,8 @@ stages:
                 - script: |  
                    sudo apt-get update  
                    sudo apt-get install -y mono-complete  
-                 displayName: Install Mono-Complete
-                 condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/heads/release'))  
+                  displayName: Install Mono-Complete
+                  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/heads/release'))  
 
                 - task: NuGetCommand@2
                   displayName: 'NuGet push'
