@@ -242,7 +242,7 @@ namespace Luminis.AzureActiveDirectory
         /// <inheritdoc/>
         public async Task AddUserToGroup(string groupId, string userId)
         {
-            await this.graphClient.Groups[groupId].Members.Ref.PostAsync(new ReferenceCreate { OdataId = $"https://graph.microsoft.com/v1.0/groups/{userId}" }).ConfigureAwait(false);
+            await this.graphClient.Groups[groupId].Members.Ref.PostAsync(new ReferenceCreate { OdataId = $"https://graph.microsoft.com/v1.0/users/{userId}" }).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
