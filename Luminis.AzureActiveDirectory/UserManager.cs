@@ -341,11 +341,10 @@ namespace Luminis.AzureActiveDirectory
                         config.QueryParameters.Select = new[] { claimKey };
                     }).ConfigureAwait(false);
 
-                if (user.AdditionalData.TryGetValue(claimKey, out var value) && ((JsonElement)value).ValueKind == JsonValueKind.String)
+                if (user.AdditionalData.TryGetValue(claimKey, out var value) && value is JsonElement element && element.ValueKind == JsonValueKind.String)
                 {
-                    return value.ToString();
+                    return element.ToString();
                 }
-
                 return null;
             }
             catch (ServiceException)
